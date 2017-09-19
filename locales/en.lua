@@ -6,7 +6,7 @@ Locales['en'] = {
   -- Vehicles
   ['veh_menu'] = 'vehicle',
   ['veh_spawn'] = 'press ~INPUT_CONTEXT~ to get a Vehicle or Helicopter',
-  ['store_veh'] = 'press ~INPUT_CONTEXT~ to store the vehicle',
+  ['store_vehicle'] = 'press ~INPUT_CONTEXT~ to store the vehicle',
   ['ambulance'] = 'ambulance',
   ['helicopter'] = 'helicopter',
   -- Action Menu
