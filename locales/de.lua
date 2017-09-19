@@ -6,7 +6,7 @@ Locales['de'] = {
   -- Vehicles
   ['veh_menu'] = 'Fahrzeuge',
   ['veh_spawn'] = 'Drücke ~INPUT_CONTEXT~ um ein Fahrzeug zu bekommen',
-  ['store_veh'] = 'Drücke ~INPUT_CONTEXT~ um das Fahrzeug zu parken',
+  ['store_vehicle'] = 'Drücke ~INPUT_CONTEXT~ um das Fahrzeug zu parken',
   ['ambulance'] = 'Krankenwagen',
   ['helicopter'] = 'Helicopter',
   -- Action Menu
