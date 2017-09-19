@@ -30,6 +30,20 @@ Citizen.CreateThread(function()
 	end
 end)
 
+function SetVehicleMaxMods(vehicle)
+
+  local props = {
+    modEngine       = 2,
+    modBrakes       = 2,
+    modTransmission = 2,
+    modSuspension   = 3,
+    modTurbo        = true,
+  }
+
+  ESX.Game.SetVehicleProperties(vehicle, props)
+
+end
+
 function RespawnPed(ped, coords)
 	SetEntityCoordsNoOffset(ped, coords.x, coords.y, coords.z, false, false, false, true)
 	NetworkResurrectLocalPlayer(coords.x, coords.y, coords.z, coords.heading, true, false)
@@ -398,10 +412,14 @@ function OpenMobileAmbulanceActionsMenu()
 							end
 
 						end
-
-						if data.current.value == 'put_in_vehicle' then
-							menu.close()
-							WarpPedInClosestVehicle(GetPlayerPed(closestPlayer))
+						
+						local player, distance = ESX.Game.GetClosestPlayer()
+						
+						if distance ~= -1 and distance <= 3.0 then
+							if data.current.value == 'put_in_vehicle' then
+								menu.close()
+								TriggerServerEvent('esx_ambulancejob:putInVehicle', GetPlayerServerId(player))
+							end
 						end
 
 					end,
@@ -547,6 +565,7 @@ function OpenVehicleSpawnerMenu()
 					end
 
 					TaskWarpPedIntoVehicle(playerPed,  vehicle,  -1)
+					SetVehicleMaxMods(vehicle)
 
 				end)
 
@@ -695,6 +714,38 @@ AddEventHandler('esx_ambulancejob:revive', function()
 
 end)
 
+RegisterNetEvent('esx_ambulancejob:putInVehicle')
+AddEventHandler('esx_ambulancejob:putInVehicle', function()
+
+  local playerPed = GetPlayerPed(-1)
+  local coords    = GetEntityCoords(playerPed)
+
+  if IsAnyVehicleNearPoint(coords.x, coords.y, coords.z, 5.0) then
+
+    local vehicle = GetClosestVehicle(coords.x,  coords.y,  coords.z,  5.0,  0,  71)
+
+    if DoesEntityExist(vehicle) then
+
+      local maxSeats = GetVehicleMaxNumberOfPassengers(vehicle)
+      local freeSeat = nil
+
+      for i=maxSeats - 1, 0, -1 do
+        if IsVehicleSeatFree(vehicle,  i) then
+          freeSeat = i
+          break
+        end
+      end
+
+      if freeSeat ~= nil then
+        TaskWarpPedIntoVehicle(playerPed,  vehicle,  freeSeat)
+      end
+
+    end
+
+  end
+
+end)
+
 AddEventHandler('esx_ambulancejob:hasEnteredMarker', function(zone)
 
 	if zone == 'HospitalInteriorEntering1' then
@@ -732,23 +783,17 @@ AddEventHandler('esx_ambulancejob:hasEnteredMarker', function(zone)
 
 		if IsPedInAnyVehicle(playerPed,  false) then
 
-			local vehicle, distance = ESX.Game.GetClosestVehicle({
-				x = coords.x,
-				y = coords.y,
-				z = coords.z
-			})
+			local vehicle = GetVehiclePedIsIn(playerPed, false)
 
-			if distance ~= -1 and distance <= 1.0 then
-
-				CurrentAction     = 'delete_vehicle'
-				CurrentActionMsg  = _U('store_veh')
-				CurrentActionData = {vehicle = vehicle}
-
+			if DoesEntityExist(vehicle) then
+			CurrentAction     = 'delete_vehicle'
+			CurrentActionMsg  = _U('store_vehicle')
+			CurrentActionData = {vehicle = vehicle}
 			end
 
 		end
 
-		end
+	end
 
 end)
 
@@ -762,10 +807,9 @@ Citizen.CreateThread(function()
 
 	local blip = AddBlipForCoord(Config.Zones.HospitalInteriorOutside1.Pos.x, Config.Zones.HospitalInteriorOutside1.Pos.y, Config.Zones.HospitalInteriorOutside1.Pos.z)
 
-  SetBlipSprite (blip, Config.Zones.Blip.Sprite)
-  SetBlipDisplay(blip, Config.Zones.Blip.Display)
-  SetBlipScale  (blip, Config.Zones.Blip.Scale)
-  SetBlipColour (blip, Config.Zones.Blip.Colour)
+  SetBlipSprite (blip, 61)
+  SetBlipDisplay(blip, 4)
+  SetBlipScale  (blip, 1.2)
   SetBlipAsShortRange(blip, true)
 
 	BeginTextCommandSetBlipName("STRING")

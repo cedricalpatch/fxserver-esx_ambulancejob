@@ -68,6 +68,11 @@ ESX.RegisterServerCallback('esx_ambulancejob:removeItemsAfterRPDeathRemoveMoney'
 
 end)
 
+RegisterServerEvent('esx_ambulancejob:putInVehicle')
+AddEventHandler('esx_ambulancejob:putInVehicle', function(target)
+  TriggerClientEvent('esx_ambulancejob:putInVehicle', target)
+end)
+
 ESX.RegisterServerCallback('esx_ambulancejob:getBankMoney', function(source, cb)
 
     local xPlayer = ESX.GetPlayerFromId(source)
