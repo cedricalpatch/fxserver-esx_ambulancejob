@@ -44,4 +44,10 @@ Locales['en'] = {
   ['press_respawn'] = 'press [~b~E~w~] to respawn.',
   -- Revive
   ['revive_help'] = 'revive a player',
+  
+    --fines
+  ['fine'] = 'Payment',
+  ['no_players_nearby'] = 'no players nearby',
+  ['ambulance_fines'] = 'Bill',
+  ['fine_total'] = 'billing : ',
 }
