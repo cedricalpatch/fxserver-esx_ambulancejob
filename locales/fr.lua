@@ -50,5 +50,5 @@ Locales['fr'] = {
   ['fine'] = 'Paiement',
   ['no_players_nearby'] = 'aucun joueur à proximité',
   ['ambulance_fines'] = 'Redevation',
-  ['fine_total'] = 'amende : ',
+  ['fine_total'] = 'paiement : ',
 }
