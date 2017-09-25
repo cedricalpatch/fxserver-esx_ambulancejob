@@ -44,4 +44,11 @@ Locales['fr'] = {
   ['press_respawn'] = 'appuyez [~b~E~w~] sur pour réapparaître.',
   -- Revive
   ['revive_help'] = 'relancer un joueur',
+  
+  
+  --fines
+  ['fine'] = 'Paiement',
+  ['no_players_nearby'] = 'aucun joueur à proximité',
+  ['ambulance_fines'] = 'Redevation',
+  ['fine_total'] = 'amende : ',
 }

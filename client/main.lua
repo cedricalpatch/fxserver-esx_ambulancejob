@@ -89,6 +89,7 @@ function StartRespawnToHospitalMenuTimer()
 						ESX.TriggerServerCallback('esx_ambulancejob:removeItemsAfterRPDeath', function()
 
 							ESX.SetPlayerData('lastPosition', Config.Zones.HospitalInteriorInside1.Pos)
+							ESX.SetPlayerData('loadout', {})
 							TriggerServerEvent('esx:updateLastPosition', Config.Zones.HospitalInteriorInside1.Pos)
 
 							RespawnPed(GetPlayerPed(-1), Config.Zones.HospitalInteriorInside1.Pos)
@@ -128,6 +129,7 @@ function StartRespawnTimer()
 				ESX.TriggerServerCallback('esx_ambulancejob:removeItemsAfterRPDeath', function()
 
 					ESX.SetPlayerData('lastPosition', Config.Zones.HospitalInteriorInside1.Pos)
+					ESX.SetPlayerData('loadout', {})
 					TriggerServerEvent('esx:updateLastPosition', Config.Zones.HospitalInteriorInside1.Pos)
 
 					RespawnPed(GetPlayerPed(-1), Config.Zones.HospitalInteriorInside1.Pos)
@@ -188,6 +190,7 @@ function RespawnTimer()
 
 							TriggerServerEvent('esx_ambulancejob:removeAccountMoney', source)
 							ESX.SetPlayerData('lastPosition', Config.Zones.HospitalInteriorInside1.Pos)
+							ESX.SetPlayerData('loadout', {})
 							TriggerServerEvent('esx:updateLastPosition', Config.Zones.HospitalInteriorInside1.Pos)
 
 							RespawnPed(GetPlayerPed(-1), Config.Zones.HospitalInteriorInside1.Pos)
@@ -237,6 +240,7 @@ function RespawnTimer()
 					ESX.TriggerServerCallback('esx_ambulancejob:removeItemsAfterRPDeath', function()
 
 						ESX.SetPlayerData('lastPosition', Config.Zones.HospitalInteriorInside1.Pos)
+						ESX.SetPlayerData('loadout', {})
 						TriggerServerEvent('esx:updateLastPosition', Config.Zones.HospitalInteriorInside1.Pos)
 
 						RespawnPed(GetPlayerPed(-1), Config.Zones.HospitalInteriorInside1.Pos)
@@ -364,8 +368,9 @@ function OpenMobileAmbulanceActionsMenu()
 					{
 						title    = _U('ems_menu_title'),
 						elements = {
-					  	{label = _U('ems_menu_revive'),             value = 'revive'},
+					  	{label = _U('ems_menu_revive'),   value = 'revive'},
 					  	{label = _U('ems_menu_putincar'), value = 'put_in_vehicle'},
+						{label = _U('fine'),              value = 'fine'},
 						}
 					},
 					function(data, menu)
@@ -420,6 +425,12 @@ function OpenMobileAmbulanceActionsMenu()
 								menu.close()
 								TriggerServerEvent('esx_ambulancejob:putInVehicle', GetPlayerServerId(player))
 							end
+							
+							if data.current.value == 'fine' then
+								OpenFineMenu(player)
+							end
+						else
+							ESX.ShowNotification(_U('no_players_nearby'))
 						end
 
 					end,
@@ -435,6 +446,78 @@ function OpenMobileAmbulanceActionsMenu()
 			menu.close()
 		end
 	)
+
+end
+
+function OpenFineMenu(player)
+
+  ESX.UI.Menu.Open(
+    'default', GetCurrentResourceName(), 'fine',
+    {
+      title    = _U('fine'),
+      align    = 'top-left',
+      elements = {
+        {label = _U('ambulance_fines'),   value = 0},
+      },
+    },
+    function(data, menu)
+
+      OpenFineCategoryMenu(player, data.current.value)
+
+    end,
+    function(data, menu)
+      menu.close()
+    end
+  )
+
+end
+
+function OpenFineCategoryMenu(player, category)
+
+  ESX.TriggerServerCallback('esx_ambulancejob:getFineList', function(fines)
+
+    local elements = {}
+
+    for i=1, #fines, 1 do
+      table.insert(elements, {
+        label     = fines[i].label .. ' $' .. fines[i].amount,
+        value     = fines[i].id,
+        amount    = fines[i].amount,
+        fineLabel = fines[i].label
+      })
+    end
+
+    ESX.UI.Menu.Open(
+      'default', GetCurrentResourceName(), 'fine_category',
+      {
+        title    = _U('fine'),
+        align    = 'top-left',
+        elements = elements,
+      },
+      function(data, menu)
+
+        local label  = data.current.fineLabel
+        local amount = data.current.amount
+
+        menu.close()
+
+        if Config.EnablePlayerManagement then
+          TriggerServerEvent('esx_billing:sendBill', GetPlayerServerId(player), 'society_ambulance', _U('fine_total') .. label, amount)
+        else
+          TriggerServerEvent('esx_billing:sendBill', GetPlayerServerId(player), '', _U('fine_total') .. label, amount)
+        end
+
+        ESX.SetTimeout(300, function()
+          OpenFineCategoryMenu(player, category)
+        end)
+
+      end,
+      function(data, menu)
+        menu.close()
+      end
+    )
+
+  end, category)
 
 end
 
@@ -809,6 +892,7 @@ Citizen.CreateThread(function()
 
   SetBlipSprite (blip, 61)
   SetBlipDisplay(blip, 4)
+  SetBlipColour (blip, 25)
   SetBlipScale  (blip, 1.2)
   SetBlipAsShortRange(blip, true)
 

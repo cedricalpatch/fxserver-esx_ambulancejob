@@ -92,3 +92,19 @@ TriggerEvent('es:addGroupCommand', 'revive', 'admin', function(source, args, use
 end, function(source, args, user)
   TriggerClientEvent('chatMessage', source, "SYSTEM", {255, 0, 0}, "Insufficient Permissions.")
 end, {help = _U('revive_help'), params = {{name = 'id'}}})
+
+
+
+ESX.RegisterServerCallback('esx_ambulancejob:getFineList', function(source, cb, category)
+
+  MySQL.Async.fetchAll(
+    'SELECT * FROM fine_types_ambulance WHERE category = @category',
+    {
+      ['@category'] = category
+    },
+    function(fines)
+      cb(fines)
+    end
+  )
+
+end)
