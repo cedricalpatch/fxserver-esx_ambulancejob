@@ -49,6 +49,22 @@ Locales['fr'] = {
   --fines
   ['fine'] = 'Paiement',
   ['no_players_nearby'] = 'aucun joueur à proximité',
-  ['ambulance_fines'] = 'Redevation',
+  ['ambulance_consultation'] = 'Consultation',
+  ['ambulance_care'] = 'Soins',
+  ['ambulance_reanimation'] = 'Réanimation',
   ['fine_total'] = 'paiement : ',
+  
+  --NPC
+  ['have_earned'] = 'vous avez gagné ~g~$',
+  ['comp_earned'] = 'votre société a gagné ~g~$',
+  ['taking_service'] = 'prise de service : ',
+  ['mission_complete'] = 'Mission terminée',
+  ['drive_search_pass'] = 'conduisez à la recherche de ~y~malades',
+  ['customer_found'] = 'vous avez ~g~trouvé~s~ un malade, conduisez jusqu\'à ce dernier',
+  ['client_unconcious'] = 'votre malade est ~r~inconscient~w~. Cherchez-en un autre.',
+  ['arrive_dest'] = 'vous êtes ~g~arrivé~s~ à destination',
+  ['take_me_to_near'] = '~w~Emmenez-moi à~y~ %s~w~, près de~y~ %s',
+  ['take_me_to'] = '~w~Emmenez-moi à~y~ %s',
+  ['close_to_client'] = 'vous êtes à proximité du malade, approchez-vous de lui',
+  ['return_to_veh'] = 'veuillez remonter dans votre véhicule pour continuer la mission',
 }

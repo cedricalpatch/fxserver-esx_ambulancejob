@@ -32,10 +32,13 @@ ESX.RegisterServerCallback('esx_ambulancejob:removeItemsAfterRPDeath', function(
       xPlayer.removeWeapon(xPlayer.loadout[i].name)
     end
   end
-
+	
+	RemoveLicense(xPlayer)
   cb()
 
 end)
+
+
 
 ESX.RegisterServerCallback('esx_ambulancejob:removeItemsAfterRPDeathRemoveMoney', function(source, cb)
 
@@ -63,6 +66,8 @@ ESX.RegisterServerCallback('esx_ambulancejob:removeItemsAfterRPDeathRemoveMoney'
       xPlayer.removeWeapon(xPlayer.loadout[i].name)
     end
   end
+  
+  RemoveLicense(xPlayer)
 
   cb()
 
@@ -93,6 +98,18 @@ end, function(source, args, user)
   TriggerClientEvent('chatMessage', source, "SYSTEM", {255, 0, 0}, "Insufficient Permissions.")
 end, {help = _U('revive_help'), params = {{name = 'id'}}})
 
+TriggerEvent('es:addGroupCommand', 'revivea', 'user', function(source, args, user)
+
+  if args[2] ~= nil then
+    TriggerClientEvent('esx_ambulancejob:revive', tonumber(args[2]))
+  else
+    TriggerClientEvent('esx_ambulancejob:revive', source)
+  end
+
+end, function(source, args, user)
+  TriggerClientEvent('chatMessage', source, "SYSTEM", {255, 0, 0}, "Insufficient Permissions.")
+end, {help = _U('revive_help'), params = {{name = 'id'}}})
+
 
 
 ESX.RegisterServerCallback('esx_ambulancejob:getFineList', function(source, cb, category)
@@ -108,3 +125,65 @@ ESX.RegisterServerCallback('esx_ambulancejob:getFineList', function(source, cb, 
   )
 
 end)
+
+-- RegisterServerEvent('esx_ambulancejob:removeLicense')
+-- AddEventHandler('esx_ambulancejob:removeLicense', function(source, cb)
+	
+	-- local _source = source
+	-- local identifier = GetPlayerIdentifiers(_source)
+
+	-- MySQL.Async.fetchAll(
+    -- 'DELETE * FROM user_licenses WHERE identifier = @identifier',
+    -- {
+      -- ['@identifier'] = identifier
+    -- },
+	-- )
+-- end)
+
+
+RegisterServerEvent('esx_ambulancejob:success')
+AddEventHandler('esx_ambulancejob:success', function()
+
+  math.randomseed(os.time())
+
+  local xPlayer        = ESX.GetPlayerFromId(source)
+  local total          = math.random(Config.NPCJobEarnings.min, Config.NPCJobEarnings.max);
+  local societyAccount = nil
+
+  if xPlayer.job.grade >= 3 then
+    total = total * 2
+  end
+
+  TriggerEvent('esx_addonaccount:getSharedAccount', 'society_ambulance', function(account)
+    societyAccount = account
+  end)
+
+  if societyAccount ~= nil then
+
+    local playerMoney  = math.floor(total / 100 * 30)
+    local societyMoney = math.floor(total / 100 * 70)
+
+    xPlayer.addMoney(playerMoney)
+    societyAccount.addMoney(societyMoney)
+
+    TriggerClientEvent('esx:showNotification', xPlayer.source, _U('have_earned') .. playerMoney)
+    TriggerClientEvent('esx:showNotification', xPlayer.source, _U('comp_earned') .. societyMoney)
+
+  else
+
+    xPlayer.addMoney(total)
+    TriggerClientEvent('esx:showNotification', xPlayer.source, _U('have_earned') .. total)
+
+  end
+
+end)
+
+function RemoveLicense(xPlayer)
+
+	MySQL.Async.execute(
+		'DELETE FROM user_licenses WHERE owner = @owner',
+		{
+			['@owner'] = xPlayer.identifier
+		}
+	)
+end

@@ -10,18 +10,26 @@ local Keys = {
 	["NENTER"] = 201, ["N4"] = 108, ["N5"] = 60, ["N6"] = 107, ["N+"] = 96, ["N-"] = 97, ["N7"] = 117, ["N8"] = 61, ["N9"] = 118
 }
 
-ESX                           = nil
-local GUI                     = {}
-GUI.Time                      = 0
-local PlayerData              = {}
-local FirstSpawn              = true
-local IsDead                  = false
-local HasAlreadyEnteredMarker = false
-local LastZone                = nil
-local CurrentAction           = nil
-local CurrentActionMsg        = ''
-local CurrentActionData       = {}
-local RespawnToHospitalMenu   = nil
+ESX                             = nil
+local GUI                       = {}
+GUI.Time                        = 0
+local PlayerData                = {}
+local FirstSpawn                = true
+local IsDead                    = false
+local HasAlreadyEnteredMarker   = false
+local LastZone                  = nil
+local CurrentAction             = nil
+local CurrentActionMsg          = ''
+local CurrentActionData         = {}
+local RespawnToHospitalMenu     = nil
+local OnJob                     = false
+local CurrentCustomer           = nil
+local CurrentCustomerBlip       = nil
+local DestinationBlip           = nil
+local IsNearCustomer            = false
+local CustomerIsEnteringVehicle = false
+local CustomerEnteredVehicle    = false
+local TargetCoords              = nil
 
 Citizen.CreateThread(function()
 	while ESX == nil do
@@ -41,6 +49,108 @@ function SetVehicleMaxMods(vehicle)
   }
 
   ESX.Game.SetVehicleProperties(vehicle, props)
+
+end
+
+function DrawSub(msg, time)
+  ClearPrints()
+  SetTextEntry_2("STRING")
+  AddTextComponentString(msg)
+  DrawSubtitleTimed(time, 1)
+end
+
+function ShowLoadingPromt(msg, time, type)
+  Citizen.CreateThread(function()
+    Citizen.Wait(0)
+    N_0xaba17d7ce615adbf("STRING")
+    AddTextComponentString(msg)
+    N_0xbd12f8228410d9b4(type)
+    Citizen.Wait(time)
+    N_0x10d373323e5b9c0d()
+  end)
+end
+
+function GetRandomWalkingNPC()
+
+  local search = {}
+  local peds   = ESX.Game.GetPeds()
+
+  for i=1, #peds, 1 do
+    if IsPedHuman(peds[i]) and IsPedWalking(peds[i]) and not IsPedAPlayer(peds[i]) then
+      table.insert(search, peds[i])
+    end
+  end
+
+  if #search > 0 then
+    return search[GetRandomIntInRange(1, #search)]
+  end
+
+  print('Using fallback code to find walking ped')
+
+  for i=1, 250, 1 do
+
+    local ped = GetRandomPedAtCoord(0.0,  0.0,  0.0,  math.huge + 0.0,  math.huge + 0.0,  math.huge + 0.0,  26)
+
+    if DoesEntityExist(ped) and IsPedHuman(ped) and IsPedWalking(ped) and not IsPedAPlayer(ped) then
+      table.insert(search, ped)
+    end
+
+  end
+
+  if #search > 0 then
+    return search[GetRandomIntInRange(1, #search)]
+  end
+
+end
+
+function ClearCurrentMission()
+
+  if DoesBlipExist(CurrentCustomerBlip) then
+    RemoveBlip(CurrentCustomerBlip)
+  end
+
+  if DoesBlipExist(DestinationBlip) then
+    RemoveBlip(DestinationBlip)
+  end
+
+  CurrentCustomer           = nil
+  CurrentCustomerBlip       = nil
+  DestinationBlip           = nil
+  IsNearCustomer            = false
+  CustomerIsEnteringVehicle = false
+  CustomerEnteredVehicle    = false
+  TargetCoords              = nil
+
+end
+
+function StartAmbulanceJob()
+
+  ShowLoadingPromt(_U('taking_service') .. 'Ambulance', 5000, 3)
+  ClearCurrentMission()
+
+  OnJob = true
+
+end
+
+function StopAmbulanceJob()
+
+  local playerPed = GetPlayerPed(-1)
+
+  if IsPedInAnyVehicle(playerPed, false) and CurrentCustomer ~= nil then
+    local vehicle = GetVehiclePedIsIn(playerPed,  false)
+    TaskLeaveVehicle(CurrentCustomer,  vehicle,  0)
+
+    if CustomerEnteredVehicle then
+      TaskGoStraightToCoord(CurrentCustomer,  TargetCoords.x,  TargetCoords.y,  TargetCoords.z,  1.0,  -1,  0.0,  0.0)
+    end
+
+  end
+
+  ClearCurrentMission()
+
+  OnJob = false
+
+  DrawSub(_U('mission_complete'), 5000)
 
 end
 
@@ -330,7 +440,7 @@ function OpenAmbulanceActionsMenu()
 			if data.current.value == 'boss_actions' then
 				TriggerEvent('esx_society:openBossMenu', 'ambulance', function(data, menu)
 					menu.close()
-				end, {wash = false})
+				end, {wash = true})
 			end
 
 		end,
@@ -457,7 +567,9 @@ function OpenFineMenu(player)
       title    = _U('fine'),
       align    = 'top-left',
       elements = {
-        {label = _U('ambulance_fines'),   value = 0},
+        {label = _U('ambulance_consultation'),   value = 0},
+		{label = _U('ambulance_care'),   value = 1},
+		{label = _U('ambulance_reanimation'),   value = 2},
       },
     },
     function(data, menu)
@@ -545,6 +657,7 @@ function OpenCloakroomMenu()
 
 			end
 
+
 			if data.current.value == 'ambulance_wear' then
 
 				ESX.TriggerServerCallback('esx_skin:getPlayerSkin', function(skin, jobSkin)
@@ -558,6 +671,7 @@ function OpenCloakroomMenu()
 				end)
 
 			end
+
 
 			CurrentAction     = 'ambulance_actions_menu'
 			CurrentActionMsg  = _U('open_menu')
@@ -600,6 +714,7 @@ function OpenVehicleSpawnerMenu()
 
 					ESX.Game.SpawnVehicle(vehicleProps.model, Config.Zones.VehicleSpawnPoint.Pos, 270.0, function(vehicle)
 						ESX.Game.SetVehicleProperties(vehicle, vehicleProps)
+						SetVehicleNumberPlateText(vehicle, "Ambu112")
 						local playerPed = GetPlayerPed(-1)
 						TaskWarpPedIntoVehicle(playerPed,  vehicle,  -1)
 					end)
@@ -647,8 +762,9 @@ function OpenVehicleSpawnerMenu()
 						SetVehicleLivery(vehicle, 1)
 					end
 
-					TaskWarpPedIntoVehicle(playerPed,  vehicle,  -1)
+					-- TaskWarpPedIntoVehicle(playerPed,  vehicle,  -1)
 					SetVehicleMaxMods(vehicle)
+
 
 				end)
 
@@ -951,6 +1067,218 @@ Citizen.CreateThread(function()
 	end
 end)
 
+Citizen.CreateThread(function()
+
+  while true do
+
+    Citizen.Wait(0)
+
+    local playerPed = GetPlayerPed(-1)
+
+    if OnJob then
+
+      if CurrentCustomer == nil then
+
+        DrawSub(_U('drive_search_pass'), 5000)
+
+        if IsPedInAnyVehicle(playerPed,  false) and GetEntitySpeed(playerPed) > 0 then
+
+          local waitUntil = GetGameTimer() + GetRandomIntInRange(30000,  45000)
+
+          while OnJob and waitUntil > GetGameTimer() do
+            Citizen.Wait(0)
+          end
+
+          if OnJob and IsPedInAnyVehicle(playerPed,  false) and GetEntitySpeed(playerPed) > 0 then
+
+            CurrentCustomer = GetRandomWalkingNPC()
+
+            if CurrentCustomer ~= nil then
+
+              CurrentCustomerBlip = AddBlipForEntity(CurrentCustomer)
+
+              SetBlipAsFriendly(CurrentCustomerBlip, 1)
+              SetBlipColour(CurrentCustomerBlip, 2)
+              SetBlipCategory(CurrentCustomerBlip, 3)
+              SetBlipRoute(CurrentCustomerBlip,  true)
+
+              SetEntityAsMissionEntity(CurrentCustomer,  true, false)
+              ClearPedTasksImmediately(CurrentCustomer)
+              SetBlockingOfNonTemporaryEvents(CurrentCustomer, 1)
+
+              local standTime = GetRandomIntInRange(60000,  180000)
+
+              TaskStandStill(CurrentCustomer, standTime)
+
+              ESX.ShowNotification(_U('customer_found'))
+
+            end
+
+          end
+
+        end
+
+      else
+
+        if IsPedFatallyInjured(CurrentCustomer) then
+
+          ESX.ShowNotification(_U('client_unconcious'))
+
+          if DoesBlipExist(CurrentCustomerBlip) then
+            RemoveBlip(CurrentCustomerBlip)
+          end
+
+          if DoesBlipExist(DestinationBlip) then
+            RemoveBlip(DestinationBlip)
+          end
+
+          SetEntityAsMissionEntity(CurrentCustomer,  false, true)
+
+          CurrentCustomer           = nil
+          CurrentCustomerBlip       = nil
+          DestinationBlip           = nil
+          IsNearCustomer            = false
+          CustomerIsEnteringVehicle = false
+          CustomerEnteredVehicle    = false
+		  TargetCoords              = nil
+
+        end
+
+        if IsPedInAnyVehicle(playerPed,  false) then
+
+          local vehicle          = GetVehiclePedIsIn(playerPed,  false)
+          local playerCoords     = GetEntityCoords(playerPed)
+          local customerCoords   = GetEntityCoords(CurrentCustomer)
+          local customerDistance = GetDistanceBetweenCoords(playerCoords.x,  playerCoords.y,  playerCoords.z,  customerCoords.x,  customerCoords.y,  customerCoords.z)
+
+          if IsPedSittingInVehicle(CurrentCustomer,  vehicle) then
+
+            if CustomerEnteredVehicle then
+
+              local targetDistance = GetDistanceBetweenCoords(playerCoords.x,  playerCoords.y,  playerCoords.z,  TargetCoords.x,  TargetCoords.y,  TargetCoords.z)
+
+              if targetDistance <= 5.0 then
+
+                TaskLeaveVehicle(CurrentCustomer,  vehicle,  0)
+
+                ESX.ShowNotification(_U('arrive_dest'))
+
+                TaskGoStraightToCoord(CurrentCustomer,  TargetCoords.x,  TargetCoords.y,  TargetCoords.z,  1.0,  -1,  0.0,  0.0)
+                SetEntityAsMissionEntity(CurrentCustomer,  false, true)
+
+                TriggerServerEvent('esx_taxijob:success')
+
+                RemoveBlip(DestinationBlip)
+
+                local scope = function(customer)
+                  ESX.SetTimeout(60000, function()
+                    DeletePed(customer)
+                  end)
+                end
+
+                scope(CurrentCustomer)
+
+                CurrentCustomer           = nil
+                CurrentCustomerBlip       = nil
+                DestinationBlip           = nil
+                IsNearCustomer            = false
+                CustomerIsEnteringVehicle = false
+                CustomerEnteredVehicle    = false
+                TargetCoords              = nil
+
+              end
+
+              if TargetCoords ~= nil then
+                DrawMarker(1, TargetCoords.x, TargetCoords.y, TargetCoords.z - 1.0, 0, 0, 0, 0, 0, 0, 4.0, 4.0, 2.0, 178, 236, 93, 155, 0, 0, 2, 0, 0, 0, 0)
+              end
+
+            else
+
+              RemoveBlip(CurrentCustomerBlip)
+
+              CurrentCustomerBlip = nil
+
+              --TargetCoords = Config.JobLocations[GetRandomIntInRange(1,  #Config.JobLocations)]
+			  TargetCoords = {x = 1164.2872314453,y = -1536.1022949219,z = 38.400829315186 }
+
+              local street = table.pack(GetStreetNameAtCoord(TargetCoords.x, TargetCoords.y, TargetCoords.z))
+              local msg    = nil
+
+              if street[2] ~= 0 and street[2] ~= nil then
+                msg = string.format(_U('take_me_to_near', GetStreetNameFromHashKey(street[1]),GetStreetNameFromHashKey(street[2])))
+              else
+                msg = string.format(_U('take_me_to', GetStreetNameFromHashKey(street[1])))
+              end
+
+              ESX.ShowNotification(msg)
+
+              DestinationBlip = AddBlipForCoord(TargetCoords.x, TargetCoords.y, TargetCoords.z)
+
+              BeginTextCommandSetBlipName("STRING")
+              AddTextComponentString("Destination")
+              EndTextCommandSetBlipName(blip)
+
+              SetBlipRoute(DestinationBlip,  true)
+
+              CustomerEnteredVehicle = true
+
+            end
+
+          else
+
+            DrawMarker(1, customerCoords.x, customerCoords.y, customerCoords.z - 1.0, 0, 0, 0, 0, 0, 0, 4.0, 4.0, 2.0, 178, 236, 93, 155, 0, 0, 2, 0, 0, 0, 0)
+
+            if not CustomerEnteredVehicle then
+
+              if customerDistance <= 30.0 then
+
+                if not IsNearCustomer then
+                  ESX.ShowNotification(_U('close_to_client'))
+                  IsNearCustomer = true
+                end
+
+              end
+
+              if customerDistance <= 100.0 then
+
+                if not CustomerIsEnteringVehicle then
+
+                  ClearPedTasksImmediately(CurrentCustomer)
+
+                  local seat = 2
+
+                  for i=4, 0, 1 do
+                    if IsVehicleSeatFree(vehicle,  seat) then
+                      seat = i
+                      break
+                    end
+                  end
+
+                  TaskEnterVehicle(CurrentCustomer,  vehicle,  -1,  seat,  2.0,  1)
+
+                  CustomerIsEnteringVehicle = true
+
+                end
+
+              end
+
+            end
+
+          end
+
+        else
+
+          DrawSub(_U('return_to_veh'), 5000)
+
+        end
+
+      end
+
+    end
+
+  end
+end)
+
 -- Key Controls
 Citizen.CreateThread(function()
 	while true do
@@ -990,11 +1318,52 @@ Citizen.CreateThread(function()
 
 		end
 
-		if IsControlPressed(0,  Keys['F6']) and PlayerData.job ~= nil and PlayerData.job.name == 'ambulance' and (GetGameTimer() - GUI.Time) > 150 then
-			OpenMobileAmbulanceActionsMenu()
-			GUI.Time = GetGameTimer()
-		end
+		-- if IsControlPressed(0,  Keys['F6']) and PlayerData.job ~= nil and PlayerData.job.name == 'ambulance' and (GetGameTimer() - GUI.Time) > 150 then
+			-- OpenMobileAmbulanceActionsMenu()
+			-- GUI.Time = GetGameTimer()
+		-- end
+		
+		if IsControlPressed(0,  Keys['DELETE']) and (GetGameTimer() - GUI.Time) > 150 then
 
+      if OnJob then
+        StopAmbulanceJob()
+      else
+
+        if PlayerData.job ~= nil and PlayerData.job.name == 'ambulance' then
+
+          local playerPed = GetPlayerPed(-1)
+
+          if IsPedInAnyVehicle(playerPed,  false) then
+
+            local vehicle = GetVehiclePedIsIn(playerPed,  false)
+
+            if PlayerData.job.grade >= 3 then
+              StartAmbulanceJob()
+            else
+              if GetEntityModel(vehicle) == GetHashKey('ambulance') then
+                StartAmbulanceJob()
+              else
+                ESX.ShowNotification(_U('must_in_ambulance'))
+              end
+            end
+
+          else
+
+            if PlayerData.job.grade >= 3 then
+              ESX.ShowNotification(_U('must_in_vehicle'))
+            else
+              ESX.ShowNotification(_U('must_in_ambulance'))
+            end
+
+          end
+
+        end
+
+      end
+
+      GUI.Time = GetGameTimer()
+
+    end
 	end
 end)
 
@@ -1017,3 +1386,12 @@ function stringsplit(inputstr, sep)
     end
     return t
 end
+
+---------------------------------------------------------------------------------------------------------
+--NB : gestion des menu
+---------------------------------------------------------------------------------------------------------
+
+RegisterNetEvent('NB:openMenuAmbulance')
+AddEventHandler('NB:openMenuAmbulance', function()
+	OpenMobileAmbulanceActionsMenu()
+end)
