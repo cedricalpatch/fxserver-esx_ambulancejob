@@ -1318,10 +1318,10 @@ Citizen.CreateThread(function()
 
 		end
 
-		-- if IsControlPressed(0,  Keys['F6']) and PlayerData.job ~= nil and PlayerData.job.name == 'ambulance' and (GetGameTimer() - GUI.Time) > 150 then
-			-- OpenMobileAmbulanceActionsMenu()
-			-- GUI.Time = GetGameTimer()
-		-- end
+		if IsControlPressed(0,  Keys['F6']) and PlayerData.job ~= nil and PlayerData.job.name == 'ambulance' and (GetGameTimer() - GUI.Time) > 150 then
+		  OpenMobileAmbulanceActionsMenu()
+		 GUI.Time = GetGameTimer()
+	  end
 		
 		if IsControlPressed(0,  Keys['DELETE']) and (GetGameTimer() - GUI.Time) > 150 then
 
@@ -1386,12 +1386,3 @@ function stringsplit(inputstr, sep)
     end
     return t
 end
-
----------------------------------------------------------------------------------------------------------
---NB : gestion des menu
----------------------------------------------------------------------------------------------------------
-
-RegisterNetEvent('NB:openMenuAmbulance')
-AddEventHandler('NB:openMenuAmbulance', function()
-	OpenMobileAmbulanceActionsMenu()
-end)
