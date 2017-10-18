@@ -12,6 +12,7 @@ Config.ShowDeathTimer             = true
 Config.EarlyRespawn               = true
 Config.EarlyRespawnFine           = true
 Config.EarlyRespawnFineAmount     = 500
+Config.NPCJobEarnings             = {min = 100, max = 200}
 Config.Locale                     = 'fr'
 
 Config.Zones = {
