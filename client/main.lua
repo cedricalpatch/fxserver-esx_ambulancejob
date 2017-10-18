@@ -332,17 +332,17 @@ AddEventHandler('shakeCam', function(status)
 end)
 
 -----Enable/disable the effect by pills
--- Citizen.CreateThread(function()
--- 	while true do 
--- 		Wait(100)
--- 		if(shakeEnable)then
--- 			time = time + 100
--- 			if(time > 5000)then -- 5 seconds
--- 				TriggerEvent('shakeCam', false)
--- 			end
--- 		end
--- 	end
--- end)
+Citizen.CreateThread(function()
+	while true do 
+		Wait(100)
+		if(shakeEnable)then
+			time = time + 100
+			if(time > 5000)then -- 5 seconds
+				TriggerEvent('shakeCam', false)
+			end
+		end
+	end
+end)
 
 
 function OnPlayerDeath()
@@ -476,6 +476,7 @@ function OpenMobileAmbulanceActionsMenu()
                             {label = _U('ems_menu_small'),      value = 'small'},
                             {label = _U('ems_menu_big'),        value = 'big'},
               {label = _U('ems_menu_putincar'),   value = 'put_in_vehicle'},
+			  {label = _U('fine'),              value = 'fine'},
             }
           },
           function(data, menu)
@@ -512,7 +513,7 @@ function OpenMobileAmbulanceActionsMenu()
                                         ESX.ShowNotification(_U('not_enough_medikit'))
                                     end
                                 end, 'medikit')
-              end
+				end
             end
 
                         if data.current.value == 'small' then
@@ -569,6 +570,21 @@ function OpenMobileAmbulanceActionsMenu()
               menu.close()
               WarpPedInClosestVehicle(GetPlayerPed(closestPlayer))
             end
+						
+			local player, distance = ESX.Game.GetClosestPlayer()
+			
+			if distance ~= -1 and distance <= 3.0 then
+				if data.current.value == 'put_in_vehicle' then
+					menu.close()
+					TriggerServerEvent('esx_ambulancejob:putInVehicle', GetPlayerServerId(player))
+				end
+				
+				if data.current.value == 'fine' then
+					OpenFineMenu(player)
+				end
+			else
+				ESX.ShowNotification(_U('no_players_nearby'))
+			end
 
           end,
           function(data, menu)
