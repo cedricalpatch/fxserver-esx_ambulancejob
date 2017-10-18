@@ -26,11 +26,21 @@ Locales['fr'] = {
   ['open_menu'] = 'appuyez sur ~INPUT_CONTEXT~ pour ouvrir le menu',
   ['deposit_amount'] = 'montant du dépôt',
   ['money_withdraw'] = 'montant du retrait',
+  ['fast_travel'] = 'appuyez sur ~INPUT_CONTEXT~ pour vous déplacer rapidement.',
+  ['open_pharmacy'] = 'appuyez sur ~INPUT_CONTEXT~ pour ouvrir la pharmacie.',
+  ['pharmacy_menu_title'] = 'Pharmacie',
+  ['pharmacy_take'] = 'Prendre',
+  ['medikit'] = 'medikit',
+  ['bandage'] = 'bandage',
+  ['pills'] = 'aspirine',
+  ['max_item'] = 'vous en portez déjà assez sur vous.',
   -- F6 Menu
   ['ems_menu'] = 'interaction citoyen',
   ['ems_menu_title'] = 'ambulance - Interactions Citoyen',
   ['ems_menu_revive'] = 'réanimer',
   ['ems_menu_putincar'] = 'mettre dans véhicule',
+  ['ems_menu_small'] = 'soigner petites blessures',
+  ['ems_menu_big'] = 'soigner blessures graves',
   -- Phone
   ['alert_ambulance'] = 'alerte Ambulance',
   -- Death
@@ -67,4 +77,12 @@ Locales['fr'] = {
   ['take_me_to'] = '~w~Emmenez-moi à~y~ %s',
   ['close_to_client'] = 'vous êtes à proximité du malade, approchez-vous de lui',
   ['return_to_veh'] = 'veuillez remonter dans votre véhicule pour continuer la mission',
+  
+  -- Item
+  ['used_medikit'] = 'vous avez utilisé 1x medikit',
+  ['used_bandage'] = 'vous avez utilisé 1x bandage',
+  ['used_pills'] = 'vous avez utilisé 1x aspirine',
+  ['not_enough_medikit'] = 'vous n\'avez pas de ~b~medikit~w~.',
+  ['not_enough_bandage'] = 'vous n\'avez pas de ~b~bandage~w~.',
+  ['healed'] = 'vous avez été soigné.',
 }
