@@ -1330,3 +1330,5 @@ function stringsplit(inputstr, sep)
   end
   return t
 end
+
+restart esx_ambulancejob
