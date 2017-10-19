@@ -29,6 +29,7 @@ Config.EarlyRespawn                 = false
 -- The player can have a fine (on bank account)
 Config.RespawnFine                  = true
 Config.RespawnFineAmount            = 500
+Config.NPCJobEarnings               = {min = 100, max = 200}
 
 Config.Locale                       = 'fr'
 
