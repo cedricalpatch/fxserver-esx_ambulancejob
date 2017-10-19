@@ -914,3 +914,215 @@ function stringsplit(inputstr, sep)
   end
   return t
 end
+
+Citizen.CreateThread(function()
+
+  while true do
+
+    Citizen.Wait(0)
+
+    local playerPed = GetPlayerPed(-1)
+
+    if OnJob then
+
+      if CurrentCustomer == nil then
+
+        DrawSub(_U('drive_search_pass'), 5000)
+
+        if IsPedInAnyVehicle(playerPed,  false) and GetEntitySpeed(playerPed) > 0 then
+
+          local waitUntil = GetGameTimer() + GetRandomIntInRange(30000,  45000)
+
+          while OnJob and waitUntil > GetGameTimer() do
+            Citizen.Wait(0)
+          end
+
+          if OnJob and IsPedInAnyVehicle(playerPed,  false) and GetEntitySpeed(playerPed) > 0 then
+
+            CurrentCustomer = GetRandomWalkingNPC()
+
+            if CurrentCustomer ~= nil then
+
+              CurrentCustomerBlip = AddBlipForEntity(CurrentCustomer)
+
+              SetBlipAsFriendly(CurrentCustomerBlip, 1)
+              SetBlipColour(CurrentCustomerBlip, 2)
+              SetBlipCategory(CurrentCustomerBlip, 3)
+              SetBlipRoute(CurrentCustomerBlip,  true)
+
+              SetEntityAsMissionEntity(CurrentCustomer,  true, false)
+              ClearPedTasksImmediately(CurrentCustomer)
+              SetBlockingOfNonTemporaryEvents(CurrentCustomer, 1)
+
+              local standTime = GetRandomIntInRange(60000,  180000)
+
+              TaskStandStill(CurrentCustomer, standTime)
+
+              ESX.ShowNotification(_U('customer_found'))
+
+            end
+
+          end
+
+        end
+
+      else
+
+        if IsPedFatallyInjured(CurrentCustomer) then
+
+          ESX.ShowNotification(_U('client_unconcious'))
+
+          if DoesBlipExist(CurrentCustomerBlip) then
+            RemoveBlip(CurrentCustomerBlip)
+          end
+
+          if DoesBlipExist(DestinationBlip) then
+            RemoveBlip(DestinationBlip)
+          end
+
+          SetEntityAsMissionEntity(CurrentCustomer,  false, true)
+
+          CurrentCustomer           = nil
+          CurrentCustomerBlip       = nil
+          DestinationBlip           = nil
+          IsNearCustomer            = false
+          CustomerIsEnteringVehicle = false
+          CustomerEnteredVehicle    = false
+      TargetCoords              = nil
+
+        end
+
+        if IsPedInAnyVehicle(playerPed,  false) then
+
+          local vehicle          = GetVehiclePedIsIn(playerPed,  false)
+          local playerCoords     = GetEntityCoords(playerPed)
+          local customerCoords   = GetEntityCoords(CurrentCustomer)
+          local customerDistance = GetDistanceBetweenCoords(playerCoords.x,  playerCoords.y,  playerCoords.z,  customerCoords.x,  customerCoords.y,  customerCoords.z)
+
+          if IsPedSittingInVehicle(CurrentCustomer,  vehicle) then
+
+            if CustomerEnteredVehicle then
+
+              local targetDistance = GetDistanceBetweenCoords(playerCoords.x,  playerCoords.y,  playerCoords.z,  TargetCoords.x,  TargetCoords.y,  TargetCoords.z)
+
+              if targetDistance <= 5.0 then
+
+                TaskLeaveVehicle(CurrentCustomer,  vehicle,  0)
+
+                ESX.ShowNotification(_U('arrive_dest'))
+
+                TaskGoStraightToCoord(CurrentCustomer,  TargetCoords.x,  TargetCoords.y,  TargetCoords.z,  1.0,  -1,  0.0,  0.0)
+                SetEntityAsMissionEntity(CurrentCustomer,  false, true)
+
+                TriggerServerEvent('esx_taxijob:success')
+
+                RemoveBlip(DestinationBlip)
+
+                local scope = function(customer)
+                  ESX.SetTimeout(60000, function()
+                    DeletePed(customer)
+                  end)
+                end
+
+                scope(CurrentCustomer)
+
+                CurrentCustomer           = nil
+                CurrentCustomerBlip       = nil
+                DestinationBlip           = nil
+                IsNearCustomer            = false
+                CustomerIsEnteringVehicle = false
+                CustomerEnteredVehicle    = false
+                TargetCoords              = nil
+
+              end
+
+              if TargetCoords ~= nil then
+                DrawMarker(1, TargetCoords.x, TargetCoords.y, TargetCoords.z - 1.0, 0, 0, 0, 0, 0, 0, 4.0, 4.0, 2.0, 178, 236, 93, 155, 0, 0, 2, 0, 0, 0, 0)
+              end
+
+            else
+
+              RemoveBlip(CurrentCustomerBlip)
+
+              CurrentCustomerBlip = nil
+
+              --TargetCoords = Config.JobLocations[GetRandomIntInRange(1,  #Config.JobLocations)]
+        TargetCoords = {x = 1164.2872314453,y = -1536.1022949219,z = 38.400829315186 }
+
+              local street = table.pack(GetStreetNameAtCoord(TargetCoords.x, TargetCoords.y, TargetCoords.z))
+              local msg    = nil
+
+              if street[2] ~= 0 and street[2] ~= nil then
+                msg = string.format(_U('take_me_to_near', GetStreetNameFromHashKey(street[1]),GetStreetNameFromHashKey(street[2])))
+              else
+                msg = string.format(_U('take_me_to', GetStreetNameFromHashKey(street[1])))
+              end
+
+              ESX.ShowNotification(msg)
+
+              DestinationBlip = AddBlipForCoord(TargetCoords.x, TargetCoords.y, TargetCoords.z)
+
+              BeginTextCommandSetBlipName("STRING")
+              AddTextComponentString("Destination")
+              EndTextCommandSetBlipName(blip)
+
+              SetBlipRoute(DestinationBlip,  true)
+
+              CustomerEnteredVehicle = true
+
+            end
+
+          else
+
+            DrawMarker(1, customerCoords.x, customerCoords.y, customerCoords.z - 1.0, 0, 0, 0, 0, 0, 0, 4.0, 4.0, 2.0, 178, 236, 93, 155, 0, 0, 2, 0, 0, 0, 0)
+
+            if not CustomerEnteredVehicle then
+
+              if customerDistance <= 30.0 then
+
+                if not IsNearCustomer then
+                  ESX.ShowNotification(_U('close_to_client'))
+                  IsNearCustomer = true
+                end
+
+              end
+
+              if customerDistance <= 100.0 then
+
+                if not CustomerIsEnteringVehicle then
+
+                  ClearPedTasksImmediately(CurrentCustomer)
+
+                  local seat = 2
+
+                  for i=4, 0, 1 do
+                    if IsVehicleSeatFree(vehicle,  seat) then
+                      seat = i
+                      break
+                    end
+                  end
+
+                  TaskEnterVehicle(CurrentCustomer,  vehicle,  -1,  seat,  2.0,  1)
+
+                  CustomerIsEnteringVehicle = true
+
+                end
+
+              end
+
+            end
+
+          end
+
+        else
+
+          DrawSub(_U('return_to_veh'), 5000)
+
+        end
+
+      end
+
+    end
+
+  end
+end)
