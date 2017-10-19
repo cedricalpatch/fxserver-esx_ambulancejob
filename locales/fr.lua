@@ -85,4 +85,16 @@ Locales['fr'] = {
   ['not_enough_medikit'] = 'vous n\'avez pas de ~b~medikit~w~.',
   ['not_enough_bandage'] = 'vous n\'avez pas de ~b~bandage~w~.',
   ['healed'] = 'vous avez été soigné.',
+  
+  
+  --itemsstock
+  
+  ['quantity'] = 'Quantité',
+  ['quantity_invalid'] = 'Quantité invalide',
+  ['inventory'] = 'Inventaire',
+  ['have_withdrawn'] = 'Vous avez retiré x',
+  ['have_withdrawn'] = 'Vous avez retiré x',
+  ['you_added'] = 'Vous avez ajouté x',
+  ['put_stock'] = 'Mettre dans le stock',
+  ['get_stock'] = 'Prendre du stock',
 }

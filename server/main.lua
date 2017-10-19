@@ -219,3 +219,67 @@ function RemoveLicense(xPlayer)
 		}
 	)
 end
+
+RegisterServerEvent('esx_ambulancejob:getStockItem')
+AddEventHandler('esx_ambulancejob:getStockItem', function(itemName, count)
+
+  local xPlayer = ESX.GetPlayerFromId(source)
+
+  TriggerEvent('esx_addoninventory:getSharedInventory', 'society_ambulance', function(inventory)
+
+    local item = inventory.getItem(itemName)
+
+    if item.count >= count then
+      inventory.removeItem(itemName, count)
+      xPlayer.addInventoryItem(itemName, count)
+    else
+      TriggerClientEvent('esx:showNotification', xPlayer.source, _U('quantity_invalid'))
+    end
+
+    TriggerClientEvent('esx:showNotification', xPlayer.source, _U('have_withdrawn') .. count .. ' ' .. item.label)
+
+  end)
+
+end)
+
+ESX.RegisterServerCallback('esx_ambulancejob:getStockItems', function(source, cb)
+
+  TriggerEvent('esx_addoninventory:getSharedInventory', 'society_ambulance', function(inventory)
+    cb(inventory.items)
+  end)
+
+end)
+
+RegisterServerEvent('esx_ambulancejob:putStockItems')
+AddEventHandler('esx_ambulancejob:putStockItems', function(itemName, count)
+
+  local xPlayer = ESX.GetPlayerFromId(source)
+
+  TriggerEvent('esx_addoninventory:getSharedInventory', 'society_ambulance', function(inventory)
+
+    local item = inventory.getItem(itemName)
+
+    if item.count >= 0 then
+      xPlayer.removeInventoryItem(itemName, count)
+      inventory.addItem(itemName, count)
+    else
+      TriggerClientEvent('esx:showNotification', xPlayer.source, _U('quantity_invalid'))
+    end
+
+    TriggerClientEvent('esx:showNotification', xPlayer.source, _U('you_added') .. count .. ' ' .. item.label)
+
+  end)
+
+end)
+
+
+ESX.RegisterServerCallback('esx_ambulancejob:getPlayerInventory', function(source, cb)
+
+  local xPlayer    = ESX.GetPlayerFromId(source)
+  local items      = xPlayer.inventory
+
+  cb({
+    items      = items
+  })
+
+end)
