@@ -95,6 +95,6 @@ Locales['fr'] = {
   ['have_withdrawn'] = 'Vous avez retiré x',
   ['have_withdrawn'] = 'Vous avez retiré x',
   ['you_added'] = 'Vous avez ajouté x',
-  ['put_stock'] = 'Mettre dans le stock',
-  ['get_stock'] = 'Prendre du stock',
+  ['deposit_stock'] = 'Déposer Stock',
+  ['take_stock'] = 'Prendre Stock',
 }
